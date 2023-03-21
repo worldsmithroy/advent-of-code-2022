@@ -8,6 +8,17 @@
 (defun move-crates (crates count from to)
 	(dotimes (move count) (move-crate crates (- from 1) (- to 1))))
 
+(defun move-crate-block (crates count from to)
+	(let* (
+		(crate-stack 		(nth (- from 1) crates))
+		(crate-destination 	(nth (- to 1) crates))
+		(crates-to-move 	(subseq crate-stack 0 count))
+		(crates-remaining 	(subseq crate-stack count))
+		)
+		(progn
+			(setf (nth (- from 1) crates) crates-remaining)
+			(setf (nth (- to 1) crates) (append crates-to-move crate-destination)))))
+
 (defun top-crates (crates)
 	(apply #'concatenate 'string (mapcar #'car crates)))
 
@@ -64,5 +75,17 @@
 		(progn
 			(map 'nil
 				 #'(lambda (move-row) (apply #'move-crates crate-stack move-row))
+				 move-list)
+			(top-crates crate-stack))))
+
+(defun reorganize-crates-in-blocks (filename)
+	(let* (
+		(file-data		(cl-ppcre:split "\\n{2}" (uiop:read-file-string filename)))
+		(crate-stack	(parse-board (nth 0 file-data)))
+		(move-list 		(parse-moves (nth 1 file-data)))
+		)
+		(progn
+			(map 'nil
+				 #'(lambda (move-row) (apply #'move-crate-block crate-stack move-row))
 				 move-list)
 			(top-crates crate-stack))))
